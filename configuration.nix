@@ -47,6 +47,10 @@
     nameservers = ["192.168.178.1"];
   };
 
+  imports = [
+    ./services
+  ];
+
   environment = {
     enableAllTerminfo = true;
     systemPackages = with pkgs; [

@@ -24,7 +24,7 @@
     options = ["fmask=0077" "dmask=0077"];
   };
 
-  fileSystems."/mnt/hot-storage" = {
+  fileSystems."/hot-storage" = {
     device = "/dev/disk/by-uuid/611626bf-dcca-4286-819f-fb714f0e18d0";
     fsType = "ext4";
   };
