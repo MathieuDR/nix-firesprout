@@ -9,7 +9,9 @@
     "restic/password".file = "${self}/secrets/restic/password.age";
   };
 
-  services.restic.backups.b2 = {
+  services.restic.backups.backblaze = {
+    initialize = true;
+
     timerConfig = {
       OnCalendar = "00:05";
       # This will make sure it ran, even when the trigger was missed.
