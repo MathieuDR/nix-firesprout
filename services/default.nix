@@ -11,6 +11,6 @@ in {
     ./actual.nix
     # ./calibre-web.nix
     ./paperless.nix
-    # ./immich.nix
+    ./immich.nix
   ];
 }
