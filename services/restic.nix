@@ -10,9 +10,6 @@
   };
 
   services.restic.backups.b2 = {
-    # We want to init our repo
-    initialize = true;
-
     timerConfig = {
       OnCalendar = "00:05";
       # This will make sure it ran, even when the trigger was missed.

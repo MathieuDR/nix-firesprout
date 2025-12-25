@@ -6,7 +6,7 @@
 }: let
 in {
   imports = [
-    # ./restic.nix
+    ./restic.nix
     ./caddy.nix
     ./actual.nix
     # ./calibre-web.nix
