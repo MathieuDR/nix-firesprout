@@ -8,21 +8,16 @@
   port = "29818";
   tikaPort = "29820";
   gotenbergPort = "29819";
-  domain = "docs.i.deraedt.dev";
+  domain = "docs.home.deraedt.dev";
 in {
   age.secrets = {
     "paperless/env".file = "${self}/secrets/paperless/env.age";
   };
 
-  #TODO: Backups
-  # services.restic.backups.b2.paths = [
-  #   media
-  #   "${data}/db.sqlite3"
-  #   "${data}/celerybeat-schedule.db"
-  #   #"${data}/index"
-  #   "${data}/nixos-paperless-secret-key"
-  #   "${data}/superuser-state"
-  # ];
+  services.restic.backups.backblaze.paths = [
+    media
+    data
+  ];
 
   # Gotenberg for Office document conversion
   virtualisation.oci-containers.containers.gotenberg = {
@@ -44,11 +39,10 @@ in {
     ];
   };
 
-  # Paperless slice - limit ALL paperless services combined
-  systemd.slices.system-paperless.sliceConfig = {
-    MemoryMax = "1G"; # All paperless services share 1GB
-    MemoryHigh = "800M";
-  };
+  # systemd.slices.system-paperless.sliceConfig = {
+  #   MemoryMax = "4G";
+  #   MemoryHigh = "2.5G";
+  # };
 
   systemd.targets.paperless = {
     description = "Paperless document management suite";
@@ -59,17 +53,6 @@ in {
       "paperless-task-queue.service"
     ];
   };
-
-  # Make paperless services NOT auto-start
-  # systemd.services.paperless-scheduler.wantedBy = lib.mkForce [];
-  # systemd.services.paperless-web.wantedBy = lib.mkForce [];
-  # systemd.services.paperless-consumer.wantedBy = lib.mkForce [];
-  # systemd.services.paperless-task-queue.wantedBy = lib.mkForce [];
-
-  # TODO:
-  # Make OCI containers also on-demand
-  # virtualisation.oci-containers.containers.gotenberg.autoStart = false;
-  # virtualisation.oci-containers.containers.tika.autoStart = false;
 
   services.paperless = {
     enable = true;

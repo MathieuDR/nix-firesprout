@@ -1,5 +1,4 @@
 {...}: let
-  # Hot storage, faters, backups to offsite & cold storage
   data_dir = "/hot-storage/actual/";
 in {
   virtualisation.oci-containers.containers.actual = {
@@ -19,12 +18,11 @@ in {
     "d ${data_dir} 0664 root root"
   ];
 
-  #TODO: BACKUPS
-  # services.restic.backups.b2.paths = [
-  #   data_dir
-  # ];
+  services.restic.backups.backblaze.paths = [
+    data_dir
+  ];
 
-  services.caddy.virtualHosts."actual.i.deraedt.dev" = {
+  services.caddy.virtualHosts."actual.home.deraedt.dev" = {
     extraConfig = ''
       tls internal
       encode gzip zstd
