@@ -5,9 +5,9 @@
 }: let
   mediaDirectory = "/storage/immich";
 in {
-  age.secrets = {
-    "immich/env".file = "${self}/secrets/immich/env.age";
-  };
+  # age.secrets = {
+  #   "immich/env".file = "${self}/secrets/immich/env.age";
+  # };
 
   systemd.tmpfiles.rules = [
     "d ${mediaDirectory} 0700 ${config.services.immich.user} ${config.services.immich.group}"
@@ -15,14 +15,17 @@ in {
 
   services.immich = {
     enable = true;
+    mediaLocation = mediaDirectory;
 
-    secretsFile = config.age.secrets."immich/env".path;
+    # secretsFile = config.age.secrets."immich/env".path;
 
     environment = {
       TZ = "Europe/Brussels";
     };
+
     database.enableVectors = false;
     database.enableVectorChord = true;
+
     machine-learning = {
       enable = true;
       environment = {
