@@ -51,6 +51,7 @@
     ./services
   ];
 
+  nixpkgs.config.allowUnfree = true;
   environment = {
     enableAllTerminfo = true;
     systemPackages = with pkgs; [

@@ -14,7 +14,7 @@ in {
   ];
 
   services.immich = {
-    enable = false;
+    enable = true;
 
     secretsFile = config.age.secrets."immich/env".path;
 
