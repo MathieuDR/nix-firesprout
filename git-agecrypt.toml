@@ -2,8 +2,10 @@
 "secrets/.envrc_pii" = [
     "age1ld3l4gxkquc9wwu34sv407dmukmwfx6lxm87tfwlvl08ak8avs9sa8ynnh",
     "age1uw8gd305r6tutr5fm883405d8k06rsmsmh6h6waxtnx46pjylynq82caus",
+    "age184z4gvlfgj462jqc906ttec4gzkz78p42qadwggl7mk33gglwq0q5tyq45",
 ]
 "secrets/PII.json" = [
     "age1ld3l4gxkquc9wwu34sv407dmukmwfx6lxm87tfwlvl08ak8avs9sa8ynnh",
     "age1uw8gd305r6tutr5fm883405d8k06rsmsmh6h6waxtnx46pjylynq82caus",
+    "age184z4gvlfgj462jqc906ttec4gzkz78p42qadwggl7mk33gglwq0q5tyq45",
 ]
