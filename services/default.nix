@@ -6,6 +6,7 @@
 }: let
 in {
   imports = [
+    ./diagnostics.nix
     ./restic.nix
     ./caddy.nix
     ./actual.nix
