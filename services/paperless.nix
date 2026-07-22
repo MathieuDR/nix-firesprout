@@ -4,7 +4,7 @@
   ...
 }: let
   data = "/hot-storage/paperless/data";
-  media = "/storage/paperless/media";
+  media = "/hot-storage/paperless-cold/media";
   port = "29818";
   tikaPort = "29820";
   gotenbergPort = "29819";
@@ -100,8 +100,6 @@ in {
 
   services.caddy.virtualHosts.${domain} = {
     extraConfig = ''
-      tls internal
-
       reverse_proxy http://localhost:${port}
       encode {
         zstd

@@ -1,13 +1,56 @@
 {
   self,
+  pkgs,
+  lib,
   config,
   ...
 }: let
-  mediaDirectory = "/storage/immich";
+  mediaDirectory = "/hot-storage/immich-cold";
 in {
-  # age.secrets = {
-  #   "immich/env".file = "${self}/secrets/immich/env.age";
+  # Overlay to enable CUDA for onnxruntime
+  # See: https://discourse.nixos.org/t/immich-and-cuda-accelerated-machine-learning/58330/4
+  # nixpkgs.config = {
+  #   # cudaSupport = true;
+  #   cudaCapabilities = ["6.1"];
+  #   cudaForwardCompat = false;
+  #   allowUnsupportedSystem = true;
   # };
+
+  # nixpkgs.overlays = [
+  #   (final: prev: {
+  #     onnxruntime = prev.onnxruntime.override {
+  #       cudaSupport = true;
+  #       cudaPackages = prev.cudaPackages.overrideScope (cfinal: cprev: {
+  #         flags =
+  #           cprev.flags
+  #           // {
+  #             cudaCapabilities = ["6.1"];
+  #           };
+  #       });
+  #     };
+  #
+  #     # Patch to fix broken CUDA test
+  #     # immich-machine-learning = prev.immich-machine-learning.overrideAttrs (old: {
+  #     #   patches =
+  #     #     (old.patches or [])
+  #     #     ++ [
+  #     #       (pkgs.writeText "disable_cuda_test.diff" ''
+  #     #         --- a/test_main.py
+  #     #         +++ b/test_main.py
+  #     #         @@ -285,8 +285,6 @@
+  #     #                  session = OrtSession("ViT-B-32__openai")
+  #     #
+  #     #                  assert session.sess_options.execution_mode == ort.ExecutionMode.ORT_SEQUENTIAL
+  #     #         -        assert session.sess_options.inter_op_num_threads == 1
+  #     #         -        assert session.sess_options.intra_op_num_threads == 2
+  #     #                  assert session.sess_options.enable_cpu_mem_arena is False
+  #     #
+  #     #              def test_sets_default_sess_options_does_not_set_threads_if_non_cpu_and_default_threads(self) -> None:
+  #     #       '')
+  #     #     ];
+  #     # });
+  #   })
+  # ];
 
   systemd.tmpfiles.rules = [
     "d ${mediaDirectory} 0700 ${config.services.immich.user} ${config.services.immich.group}"
@@ -16,8 +59,6 @@ in {
   services.immich = {
     enable = true;
     mediaLocation = mediaDirectory;
-
-    # secretsFile = config.age.secrets."immich/env".path;
 
     environment = {
       TZ = "Europe/Brussels";
@@ -31,11 +72,26 @@ in {
       environment = {
         MACHINE_LEARNING_WORKERS = "1"; # Start with 1, 1080 Ti has 11GB VRAM
         # MACHINE_LEARNING_DEVICE_IDS = "0"; # Your GPU device ID (likely 0)
+        # LD_LIBRARY_PATH = "${pkgs.python313Packages.onnxruntime}/lib:${pkgs.python313Packages.onnxruntime}/lib/python3.13/site-packages/onnxruntime/capi";
       };
     };
     settings.server.externalDomain = "https://pics.home.deraedt.dev";
-    accelerationDevices = null;
+    # accelerationDevices = [
+    #   "/dev/nvidia0"
+    #   "/dev/nvidiactl"
+    #   "/dev/nvidia-uvm"
+    # ];
   };
+
+  # Force device access for ML service (the module doesn't apply accelerationDevices to ML)
+  # systemd.services.immich-machine-learning.serviceConfig = {
+  #   PrivateDevices = lib.mkForce false;
+  #   DeviceAllow = lib.mkForce [
+  #     "/dev/nvidia0"
+  #     "/dev/nvidiactl"
+  #     "/dev/nvidia-uvm"
+  #   ];
+  # };
 
   users.users.immich.extraGroups = ["video" "render"];
 
@@ -45,6 +101,8 @@ in {
     modesetting.enable = true;
     open = false;
     nvidiaSettings = true;
+    # package = config.boot.kernelPackages.nvidiaPackages.legacy_535;
+    # package = config.boot.kernelPackages.nvidiaPackages.production;
     package = config.boot.kernelPackages.nvidiaPackages.stable;
   };
   hardware.nvidia-container-toolkit.enable = true;
@@ -56,9 +114,20 @@ in {
     mediaDirectory
   ];
 
+  systemd.services.immich-machine-learning.serviceConfig = {
+    MemoryHigh = "4G";
+    MemoryMax = "6G";
+    MemorySwapMax = "0";
+  };
+
+  systemd.services.immich-server.serviceConfig = {
+    MemoryHigh = "3G";
+    MemoryMax = "5G";
+    MemorySwapMax = "0";
+  };
+
   services.caddy.virtualHosts."pics.home.deraedt.dev" = {
     extraConfig = ''
-      tls internal
       reverse_proxy http://localhost:${toString config.services.immich.port}
       encode {
         zstd

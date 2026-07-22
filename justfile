@@ -13,6 +13,9 @@ rebuild-local:
 	nixos-rebuild switch --flake .#firesprout
 
 # Rebuilds nixos, doesn't wipe
+rebuild-nice:
+	nice -n 19 ionice -c 3 nixos-rebuild switch --flake .#firesprout --target-host root@${SERVER_IP} --max-jobs 6 --cores 2
+
 rebuild:
 	nixos-rebuild switch --flake .#firesprout --target-host root@${SERVER_IP}
 

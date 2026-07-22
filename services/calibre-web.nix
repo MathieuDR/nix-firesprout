@@ -1,10 +1,10 @@
 {...}: let
   #NOTE: We don't need to set these directories up ourselves.
   web_data_dir = "/hot-storage/calibre-web";
-  library = "/storage/calibre-library";
+  library = "/hot-storage/calibre-library-cold";
 in {
   services.calibre-web = {
-    enable = true;
+    enable = false;
 
     dataDir = web_data_dir;
     listen = {
@@ -29,9 +29,8 @@ in {
   #   library
   # ];
 
-  services.caddy.virtualHosts."books.local" = {
+  services.caddy.virtualHosts."books.home.deraedt.dev" = {
     extraConfig = ''
-      tls internal
       reverse_proxy http://localhost:8883
 
       encode {

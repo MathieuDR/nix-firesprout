@@ -10,6 +10,7 @@
     device = "nodev";
     efiSupport = true;
     efiInstallAsRemovable = true;
+    memtest86.enable = true;
   };
 
   time.timeZone = "Europe/Berlin";
@@ -104,22 +105,22 @@
   };
 
   services = {
-    snapper.configs.storage = {
-      SUBVOLUME = "/storage";
-
-      # Create automatic snapshots every hour
-      TIMELINE_CREATE = true;
-
-      # Automatically delete old snapshots
-      TIMELINE_CLEANUP = true;
-
-      # How many snapshots to keep
-      TIMELINE_LIMIT_HOURLY = 24;
-      TIMELINE_LIMIT_DAILY = 7;
-      TIMELINE_LIMIT_WEEKLY = 4;
-      TIMELINE_LIMIT_MONTHLY = 3;
-      TIMELINE_LIMIT_YEARLY = 0;
-    };
+    # snapper.configs.storage = {
+    #   SUBVOLUME = "/storage";
+    #
+    #   # Create automatic snapshots every hour
+    #   TIMELINE_CREATE = true;
+    #
+    #   # Automatically delete old snapshots
+    #   TIMELINE_CLEANUP = true;
+    #
+    #   # How many snapshots to keep
+    #   TIMELINE_LIMIT_HOURLY = 24;
+    #   TIMELINE_LIMIT_DAILY = 7;
+    #   TIMELINE_LIMIT_WEEKLY = 4;
+    #   TIMELINE_LIMIT_MONTHLY = 3;
+    #   TIMELINE_LIMIT_YEARLY = 0;
+    # };
 
     openssh = {
       enable = true;
@@ -140,8 +141,9 @@
   };
 
   systemd = {
+    # This actually causes freezes.
     oomd = {
-      enable = true;
+      enable = false;
       enableRootSlice = true;
       enableUserSlices = true;
     };
