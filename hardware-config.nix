@@ -21,12 +21,13 @@
     kernelParams = [
       "panic=10" # reboot 10s after panic
       "oops=panic" # treat oops as panic
-      "nvme_core.default_ps_max_latency_us=0"
+      "nvme_core.default_ps_max_latency_us=0" # A2000 APST safety; keep until firmware flashed
 
-      "idle=nomwait"
-      "processor.max_cstate=1"
+      # NOTE: idle=nomwait + processor.max_cstate=1 were Zen1 idle-hang workarounds.
+      # Removed for the Intel i5-13500 (no such bug); keeping them would throw away
+      # the low-power idle we upgraded for.
     ];
-    kernelModules = ["kvm-amd"];
+    kernelModules = ["kvm-intel"];
     extraModulePackages = [];
   };
 
@@ -60,5 +61,5 @@
   swapDevices = [];
 
   nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
-  hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+  hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 }

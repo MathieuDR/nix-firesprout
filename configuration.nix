@@ -31,10 +31,21 @@
     useXkbConfig = true;
   };
 
+  # The new board's Realtek 2.5GbE enumerates under a different name than the old
+  # enp9s0, which would drop the static IP (and SSH) on first boot. Pin it to a
+  # stable name by MAC so 192.168.178.210 always lands on the LAN port.
+  #
+  # TODO(first boot): replace the placeholder MAC with the real one from the built
+  # machine (`ip -o link` at the console), then deploy. See MIGRATION.md.
+  systemd.network.links."10-lan0" = {
+    matchConfig.MACAddress = "XX:XX:XX:XX:XX:XX"; # <-- new NIC MAC
+    linkConfig.Name = "lan0";
+  };
+
   networking = {
     hostName = "${hostname}";
 
-    interfaces.enp9s0 = {
+    interfaces.lan0 = {
       useDHCP = false;
       ipv4.addresses = [
         {
@@ -51,6 +62,17 @@
   imports = [
     ./services
   ];
+
+  # Intel UHD 770 iGPU (replaces the sold GTX 1080 Ti). QuickSync for Jellyfin
+  # transcoding; render node also available to immich for OpenVINO ML later.
+  hardware.graphics = {
+    enable = true;
+    extraPackages = with pkgs; [
+      intel-media-driver # iHD VAAPI driver (Gen12)
+      vpl-gpu-rt # oneVPL runtime for QSV
+      # intel-compute-runtime  # add when wiring immich ML to OpenVINO
+    ];
+  };
 
   nixpkgs.config.allowUnfree = true;
   environment = {

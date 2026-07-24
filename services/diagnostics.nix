@@ -12,7 +12,7 @@
 #   5. netconsole -> hpi   - stream the kernel log over UDP to the Pi (192.168.178.201)
 {pkgs, ...}: let
   selfIp = "192.168.178.210";
-  selfIface = "enp9s0";
+  selfIface = "lan0";
   piIp = "192.168.178.201";
   piMac = "d8:3a:dd:30:2a:c9"; # hpi end0
   netconsolePort = "6666";
@@ -29,13 +29,15 @@ in {
   boot.kernel.sysctl = {
     "kernel.softlockup_panic" = 1;
     "kernel.hardlockup_panic" = 1;
-    "kernel.hung_task_panic" = 1;
-    "kernel.hung_task_timeout_secs" = 60;
+    # hung_task detection stays on (logs), but do NOT auto-panic: a ZFS
+    # scrub/resilver can legitimately block a task >60s on a healthy box.
+    "kernel.hung_task_panic" = 0;
+    "kernel.hung_task_timeout_secs" = 120;
   };
 
   # (3) Arm the chipset watchdog. systemd pings it every runtimeTime/2; if the
   # kernel or systemd stops responding for 60s the SP5100 resets the machine.
-  systemd.watchdog.runtimeTime = "60s";
+  systemd.settings.Manager.RuntimeWatchdogSec = "60s";
 
   # (5) netconsole target set up after the network is up (robust for the modular
   # Realtek NIC, where a boot-time netconsole= param would init before enp9s0 exists).

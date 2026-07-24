@@ -93,19 +93,10 @@ in {
   #   ];
   # };
 
+  # video/render for iGPU access (QuickSync/OpenVINO). The GTX 1080 Ti is gone;
+  # ML runs on CPU for now. TODO: wire ML to the Intel iGPU via OpenVINO
+  # (immich openvino image + intel-compute-runtime + /dev/dri passthrough).
   users.users.immich.extraGroups = ["video" "render"];
-
-  boot.kernelModules = ["nvidia"];
-  services.xserver.videoDrivers = ["nvidia"];
-  hardware.nvidia = {
-    modesetting.enable = true;
-    open = false;
-    nvidiaSettings = true;
-    # package = config.boot.kernelPackages.nvidiaPackages.legacy_535;
-    # package = config.boot.kernelPackages.nvidiaPackages.production;
-    package = config.boot.kernelPackages.nvidiaPackages.stable;
-  };
-  hardware.nvidia-container-toolkit.enable = true;
 
   #TODO: Make better backups
   # https://wiki.nixos.org/wiki/Immich
