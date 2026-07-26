@@ -70,7 +70,32 @@ Write down the **MAC** and the **temp IP**.
    is applied. The box moves to `.210`.
 4. Reboot and confirm a clean boot on the real address: `ssh root@192.168.178.210`.
 
-## Step 5 — Validate
+## Step 5 — Reconcile the hardware config (belt-and-braces)
+
+Not strictly required to boot: the existing `hardware-config.nix` already carries the
+boot-critical bits — filesystems are by UUID (same disks, unchanged), and the initrd has
+`nvme` + `ahci`, which aren't AMD-specific. They're the same drivers this system already
+boots and mounts SATA with, which is *why* it comes up on the Intel board at all
+(AMD and Intel are both x86-64; the kernel auto-loads the new chipset's drivers at runtime).
+But that `availableKernelModules` list was generated on the AB350, so confirm it matches
+what the B760M actually detects:
+
+```sh
+sudo nixos-generate-config --show-hardware-config   # prints to stdout, writes nothing
+```
+
+Diff the output against `hardware-config.nix` and merge anything relevant by hand — mainly
+`boot.initrd.availableKernelModules`; sanity-check the filesystem UUIDs match (they will).
+Don't let it overwrite the file: plain `nixos-generate-config` targets
+`/etc/nixos/hardware-configuration.nix` (wrong path for this flake), and your
+`hardware-config.nix` has hand edits (Intel microcode, the A2000 `nvme_core...=0` param).
+If you changed anything, `nixos-rebuild switch` again.
+
+If the box ever *won't* boot because the initrd can't find root (unlikely — `nvme`/`ahci`
+are generic), regenerate from the install USB instead: boot the ISO, mount root at `/mnt`,
+`sudo nixos-generate-config --root /mnt`, reconcile the modules, `nixos-rebuild boot`.
+
+## Step 6 — Validate
 
 - **RAM:** run **memtest86** (GRUB entry) overnight before trusting the reused DDR4 —
   it's the one component most likely to cause fresh instability.
@@ -82,7 +107,7 @@ Write down the **MAC** and the **temp IP**.
   running. (Make sure hpi is on the `diagnostics/netconsole-receiver` branch so it
   listens; the receiver interface didn't change.)
 
-## Step 6 — Deferred follow-ups (each a separate, deliberate step)
+## Step 7 — Deferred follow-ups (each a separate, deliberate step)
 
 - **ZFS mirror on the 2× IronWolf** — DESTRUCTIVE to those disks. Back their data up to
   B2/external first, create the mirror, restore, export via Samba/NFS. RAID isn't backup;
