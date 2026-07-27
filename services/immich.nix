@@ -98,6 +98,12 @@ in {
   # (immich openvino image + intel-compute-runtime + /dev/dri passthrough).
   users.users.immich.extraGroups = ["video" "render"];
 
+  # Pin immich's uid/gid. It auto-allocated 998 during the Crucial -> A2000 move
+  # (the old install had 993), which orphaned the media until it was re-chowned.
+  # Pinning keeps it stable across any future fresh reinstall.
+  users.users.immich.uid = 998;
+  users.groups.immich.gid = 998;
+
   #TODO: Make better backups
   # https://wiki.nixos.org/wiki/Immich
   # https://docs.immich.app/administration/backup-and-restore
