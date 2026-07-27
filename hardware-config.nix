@@ -31,11 +31,6 @@
     extraModulePackages = [];
   };
 
-  # boot.initrd.availableKernelModules = ["nvme" "xhci_pci" "ahci" "usbhid" "usb_storage" "uas" "sd_mod"];
-  # boot.initrd.kernelModules = [];
-  # boot.kernelModules = ["kvm-amd" "nvme_core.default_ps_max_latency_us=0"];
-  # boot.extraModulePackages = [];
-
   fileSystems."/" = {
     device = "/dev/disk/by-uuid/70678974-5cb2-4f31-beaf-900a7dd0f350";
     fsType = "ext4";

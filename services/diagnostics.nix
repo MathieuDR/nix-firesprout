@@ -17,8 +17,8 @@
   piMac = "d8:3a:dd:30:2a:c9"; # hpi end0
   netconsolePort = "6666";
 in {
-  # (2) Record machine-check exceptions. RAM here is non-ECC (amd64_edac has no
-  # device to bind), so rasdaemon covers MCEs via the tracing/mcelog interface.
+  # (2) Record machine-check exceptions. RAM here is non-ECC (no EDAC device to
+  # bind), so rasdaemon covers MCEs via the tracing/mcelog interface.
   boot.kernelModules = ["netconsole"];
   hardware.rasdaemon.enable = true;
 
@@ -40,7 +40,7 @@ in {
   systemd.settings.Manager.RuntimeWatchdogSec = "60s";
 
   # (5) netconsole target set up after the network is up (robust for the modular
-  # Realtek NIC, where a boot-time netconsole= param would init before enp9s0 exists).
+  # Realtek NIC, where a boot-time netconsole= param would init before lan0 exists).
 
   # systemd.services.netconsole-target = {
   #   description = "Stream kernel log to hpi via netconsole";
@@ -94,7 +94,7 @@ in {
           printf '=== %s up=%ss load=%s\n' \
             "$(date -Iseconds)" "$(cut -d. -f1 /proc/uptime)" "$(cut -d' ' -f1-3 /proc/loadavg)"
           grep -E 'MemAvailable|MemFree|Dirty:|Writeback:' /proc/meminfo
-          sensors 2>/dev/null | grep -E 'Tctl|Tdie|Composite|^temp'
+          sensors 2>/dev/null | grep -E 'Package id|Core [0-9]|Composite|^temp'
           printf 'freqMHz:'
           for f in /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq; do
             printf ' %s' "$(($(cat "$f") / 1000))"

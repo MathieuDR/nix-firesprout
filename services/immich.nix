@@ -70,28 +70,11 @@ in {
     machine-learning = {
       enable = true;
       environment = {
-        MACHINE_LEARNING_WORKERS = "1"; # Start with 1, 1080 Ti has 11GB VRAM
-        # MACHINE_LEARNING_DEVICE_IDS = "0"; # Your GPU device ID (likely 0)
-        # LD_LIBRARY_PATH = "${pkgs.python313Packages.onnxruntime}/lib:${pkgs.python313Packages.onnxruntime}/lib/python3.13/site-packages/onnxruntime/capi";
+        MACHINE_LEARNING_WORKERS = "1"; # 1 worker; ML runs on CPU for now
       };
     };
     settings.server.externalDomain = "https://pics.home.deraedt.dev";
-    # accelerationDevices = [
-    #   "/dev/nvidia0"
-    #   "/dev/nvidiactl"
-    #   "/dev/nvidia-uvm"
-    # ];
   };
-
-  # Force device access for ML service (the module doesn't apply accelerationDevices to ML)
-  # systemd.services.immich-machine-learning.serviceConfig = {
-  #   PrivateDevices = lib.mkForce false;
-  #   DeviceAllow = lib.mkForce [
-  #     "/dev/nvidia0"
-  #     "/dev/nvidiactl"
-  #     "/dev/nvidia-uvm"
-  #   ];
-  # };
 
   # video/render for iGPU access (QuickSync/OpenVINO). The GTX 1080 Ti is gone;
   # ML runs on CPU for now. TODO: wire ML to the Intel iGPU via OpenVINO
