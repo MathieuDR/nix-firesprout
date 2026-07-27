@@ -1,163 +1,186 @@
-# Firesprout → Intel platform migration (step by step)
+# Firesprout migration — status & the drive move
 
-Moving from the Ryzen 7 1700 / AB350 (Zen1 idle-hang) to the new Intel box:
-i5-13500 · Gigabyte B760M DS3H DDR4 · Silencio S400 · FSP Dagger Pro 650W SFX.
-Reusing the 32 GB DDR4 and all four drives.
+## Where we are
 
-## TL;DR — data & keys (read this first)
+- **Platform swap (AMD Ryzen 1700 → Intel i5-13500) is DONE.** The box is assembled in the
+  Silencio S400, runs the Intel config, and is reachable at `192.168.178.210`. `kvm-intel` +
+  Intel microcode, NVIDIA removed, iGPU/QuickSync in, NIC pinned to `lan0` by MAC — all live.
+- **This doc now covers the remaining job: move the OS off the aging Crucial MX300 onto the
+  Kingston A2000 NVMe.** The A2000 currently holds an *old, unused* NixOS install (ESP + swap
+  + btrfs `nixos`), NOT Windows — safe to wipe. We retire the ~10-year Crucial afterwards.
 
-- **Do you need to format? No** — not for the platform swap. The same drives move
-  into the new box; NixOS boots off the A2000 and mounts `/hot-storage` (all your
-  service data: immich, paperless, actual, calibre) by UUID, unchanged. Nothing is
-  reformatted, nothing is lost.
-- **Do you need new keys? No** — keeping the A2000 install preserves `/etc/ssh` (the
-  host key) and the agenix identity, so secrets keep decrypting. New keys are only
-  needed if you do a *fresh reinstall* (see the appendix).
-- **Formatting only happens for two optional, deferred things:** the ZFS mirror on the
-  IronWolfs (back up first) and a fresh OS reinstall (not required).
+## Confirmed disk layout (verified with `lsblk -f`)
 
-## What this branch already changed (config)
+| Disk | Device | What's on it | Role in this migration |
+|---|---|---|---|
+| Crucial MX300 (SATA SSD) | `sda` | LIVE NixOS: `sda1` ESP `/boot`, `sda2` `/`, `sda3` `/hot-storage` | **SOURCE + fallback — leave intact** |
+| Kingston A2000 (NVMe) | `nvme0n1` | old unused NixOS (ESP + swap + btrfs `nixos`) | **WIPE TARGET — the only disk we touch** |
+| 2× IronWolf 4 TB | `sdb`, `sdc` | one btrfs pool `storage` (UUID `b88f…`), unmounted | **do not touch** (data pool, later) |
 
-- `hardware-config.nix`: `kvm-amd` → `kvm-intel`, Intel microcode, dropped the Zen1
-  `idle=nomwait` + `processor.max_cstate=1` params (kept `nvme_core...=0` for the A2000).
-- `configuration.nix`: NIC pinned to a stable `lan0` **by MAC** (placeholder to fill),
-  static `192.168.178.210` bound to `lan0`; Intel iGPU (`hardware.graphics` + QuickSync).
-- `services/immich.nix`: removed all NVIDIA config; ML falls back to CPU for now.
-- `services/diagnostics.nix`: netconsole now streams from `lan0`; `hung_task_panic`
-  turned **off** (a ZFS scrub can block a task >60s on a healthy box); black-box +
-  netconsole + watchdog kept as burn-in insurance.
+> **DANGER RULE:** the only disk that gets partitioned/formatted is **`nvme0n1`**. Never
+> `sda` (your live OS + data source) or `sdb`/`sdc` (the btrfs pool). Verify the device path
+> every time before any `mkfs`/`parted`.
 
-**The one thing left to fill:** the new NIC's MAC in `configuration.nix`
-(`systemd.network.links."10-lan0".matchConfig.MACAddress`). Get it in Step 3.
+## What you actually preserve (only three things)
 
-## Step 1 — Assemble
+1. **Config — nothing to hand-copy.** It's your flake in git. On the new install you `git
+   clone` (or it's already checked out on the server). Just **commit/push local changes first**
+   (the `README.md` edit) so nothing is stranded.
+2. **`/hot-storage` data (~70 GB on `sda3`)** — immich / paperless / actual / calibre. `rsync`
+   it to the new `/hot-storage`. The Crucial stays intact through the whole move, so it *is*
+   your backup; restic→B2 is the second net.
+3. **The host SSH key `/etc/ssh/ssh_host_ed25519_key` (+`.pub`)** — agenix secrets are encrypted
+   to it. Copy it onto the new install or your secrets won't decrypt (or re-key, see appendix).
 
-Into the S400: board, CPU + cooler, all 4 DDR4 sticks, A2000 (M.2), MX300 (SATA),
-2× IronWolf (SATA), FSP SFX PSU. **Attach a monitor + keyboard** — you need console for
-first boot because the NIC changes name and the old static-IP config won't apply.
+Everything else is rebuilt from the flake.
 
-## Step 2 — First boot (BIOS + console)
+## The gotcha that bites: filesystem UUIDs change
 
-- Enter BIOS. Confirm: **32 GB / all 4 DIMMs** seen, all drives detected, boot device =
-  the A2000's EFI partition. Leave RAM at stock first (the sticks ran at 3200 before;
-  enable XMP/DOCP later if memtest is clean). Set a sane fan curve.
-- Boot. The existing generation loads fine — `kvm-amd` just doesn't load and there's no
-  NVIDIA card (both harmless). You land at a text console.
-- Log in as `thieu` (or `root`).
+Your `hardware-config.nix` hardcodes the **Crucial's** UUIDs:
 
-## Step 3 — Temporary network + grab the MAC
-
-```sh
-ip -o link                       # note the ethernet iface name AND its link/ether MAC
-sudo ip link set <iface> up
-sudo dhcpcd -4 <iface>           # or: sudo systemctl start dhcpcd
-ip -4 addr show <iface>          # note the temporary IP it got
-ping -c2 1.1.1.1                 # confirm internet
+```
+/         → b3bf0f1d-106f-4faa-9131-e070a14105f4   (ext4, sda2)
+/boot     → 52E6-3F26                              (vfat, sda1)
+/hot-storage → 611626bf-dcca-4286-819f-fb714f0e18d0 (ext4, sda3)
 ```
 
-Write down the **MAC** and the **temp IP**.
+A fresh `mkfs` on the A2000 produces **new** UUIDs. If you don't update these three, the new
+install boots pointing back at the Crucial (or fails). **After formatting the A2000, run
+`blkid` and replace all three UUIDs in `hardware-config.nix` before `nixos-install`.** This is
+the #1 step people forget. (There's no disko in this repo, so nothing does it for you.)
 
-## Step 4 — Finalize config + deploy (from your Mac)
+## Recommended path — install from the running server (no live USB)
 
-1. Put the MAC into `configuration.nix` → `matchConfig.MACAddress = "aa:bb:...";`.
-2. Deploy to the temp IP, building on the box (your Mac is aarch64-darwin, no Linux builder):
-   ```sh
-   nix run nixpkgs#nixos-rebuild -- switch \
-     --flake .#firesprout \
-     --target-host root@<tempIP> --build-host root@<tempIP>
-   ```
-3. This activates the Intel config: the NIC is renamed to `lan0` and `192.168.178.210`
-   is applied. The box moves to `.210`.
-4. Reboot and confirm a clean boot on the real address: `ssh root@192.168.178.210`.
+Simplest, because the server already evaluates the flake with the git-agecrypt PII decrypted,
+and the A2000 is just a spare disk. The Crucial stays booted as source + fallback the whole time.
 
-## Step 5 — Reconcile the hardware config (belt-and-braces)
+**0. Prep (from your daily driver).** Commit/push everything. Optionally flash the A2000
+firmware now — see the firmware section; the box runs off the Crucial so the A2000 isn't root,
+which is exactly when it's safe to flash.
 
-Not strictly required to boot: the existing `hardware-config.nix` already carries the
-boot-critical bits — filesystems are by UUID (same disks, unchanged), and the initrd has
-`nvme` + `ahci`, which aren't AMD-specific. They're the same drivers this system already
-boots and mounts SATA with, which is *why* it comes up on the Intel board at all
-(AMD and Intel are both x86-64; the kernel auto-loads the new chipset's drivers at runtime).
-But that `availableKernelModules` list was generated on the AB350, so confirm it matches
-what the B760M actually detects:
+**1. Partition the A2000** — GPT, on the server, **triple-checking the device is `nvme0n1`**:
+```sh
+lsblk -o NAME,SIZE,MODEL /dev/nvme0n1   # CONFIRM this is the KINGSTON, not sda
+sudo parted /dev/nvme0n1 -- mklabel gpt
+sudo parted /dev/nvme0n1 -- mkpart ESP fat32 1MiB 1GiB
+sudo parted /dev/nvme0n1 -- set 1 esp on
+sudo parted /dev/nvme0n1 -- mkpart root ext4 1GiB 200GiB      # OS + nix store
+sudo parted /dev/nvme0n1 -- mkpart hotstorage ext4 200GiB 100%
+sudo mkfs.fat -F32 -n BOOT /dev/nvme0n1p1
+sudo mkfs.ext4 -L nixroot /dev/nvme0n1p2
+sudo mkfs.ext4 -L hotstorage /dev/nvme0n1p3
+```
+(Adjust sizes to taste; 1 TB NVMe easily holds root + `/hot-storage`.)
 
+**2. Grab the new UUIDs and update the config:**
+```sh
+blkid /dev/nvme0n1p1 /dev/nvme0n1p2 /dev/nvme0n1p3
+```
+Edit `hardware-config.nix` → replace the three `fileSystems.*` UUIDs with these. `git add
+hardware-config.nix` (flakes only see committed/staged files).
+
+**3. Mount the new target:**
+```sh
+sudo mount /dev/nvme0n1p2 /mnt
+sudo mkdir -p /mnt/boot /mnt/hot-storage
+sudo mount /dev/nvme0n1p1 /mnt/boot
+sudo mount /dev/nvme0n1p3 /mnt/hot-storage
+```
+
+**4. Install** (from the repo dir on the server; GRUB `efiInstallAsRemovable=true` makes the
+A2000's ESP bootable even with no NVRAM entry):
+```sh
+sudo nixos-install --root /mnt --flake .#firesprout
+```
+
+**5. Preserve the host key** (overwrite the freshly-generated one so agenix keeps working):
+```sh
+sudo cp -a /etc/ssh/ssh_host_ed25519_key /etc/ssh/ssh_host_ed25519_key.pub /mnt/etc/ssh/
+```
+
+**6. Copy `/hot-storage` data** (both disks are in the box, so local rsync is fastest):
+```sh
+sudo rsync -aHAX --info=progress2 /hot-storage/ /mnt/hot-storage/
+```
+
+**7. Reboot and switch boot order.** In BIOS set the A2000 first. After boot, confirm you're
+on the NVMe, not the Crucial:
+```sh
+findmnt /            # SOURCE should be /dev/nvme0n1p2, not sda2
+```
+
+**8. Verify:** `ssh root@192.168.178.210`, `systemctl --failed`, `pics.`/`docs.`/`actual.`
+load, `/hot-storage` data intact, `ls /dev/dri` + `vainfo` (iHD), and secrets decrypt (host
+key preserved).
+
+**9. Only then retire the Crucial** — wipe it, keep it as scratch, or pull it. Nothing
+references it once the A2000 is booting.
+
+## Alternative — live USB (your original idea)
+
+Works, but more moving parts, so only if you prefer a clean room where nothing runs off either
+OS disk:
+- Boot the NixOS minimal ISO on the box; enable sshd + set a root password in the live env.
+- **You'll hit the git-agecrypt wall:** the flake reads `secrets/PII.json`, which is encrypted;
+  the bare live env can't decrypt it. So either run `nixos-anywhere`/`nixos-install` **building
+  from your daily driver** (it has your age key), or copy the decrypted `PII.json` into the live
+  env. This friction is exactly why the from-server path above is simpler.
+- Then the same partition → new-UUIDs → install → copy host key → copy data steps.
+
+Your 5-step sketch, corrected: (1) live USB ✔ (2) boot it ✔ (3) "reinstall" = **manual partition
++ update UUIDs + `nixos-install`** — not an automatic `just wipe`, since there's no disko in
+the repo (4) `just wipe`/`nixos-anywhere` needs a disko config or a pre-partitioned target, and
+it needs your keys — so build from the daily driver; "to temp" is just the live env's DHCP IP
+(5) copy files ✔ — local rsync from the Crucial is easiest since both disks are in the box.
+
+## A2000 firmware (APST bug) — flash it while you're in here
+
+Old A2000 firmware has an APST power-state bug (NVMe timeouts/hangs). You carry the kernel
+mitigation `nvme_core.default_ps_max_latency_us=0`, so this is belt-and-braces — but since the
+A2000 is about to become your boot drive, now's the ideal moment (it's not the running root, so
+it's safe to flash from the server, a live USB, or another PC). A flash updates the controller,
+not the data.
+```sh
+sudo nvme list                                  # find the A2000 → /dev/nvme0n1
+sudo nvme fw-download /dev/nvme0n1 --fw=S5Z42109.bin
+sudo nvme fw-commit  /dev/nvme0n1 -s 1 -a 1     # verify slot/action against Kingston's notes
+# power-cycle
+```
+Windows alternative: Kingston SSD Manager. Verify current firmware/filename on Kingston's site;
+have backups (small brick risk). Details + Linux `.bin` source in `hardware-upgrade-plan.md`.
+
+## Reconcile hardware config (belt-and-braces)
+
+After the A2000 is up, confirm the auto-detected hardware matches what you hand-wrote — doubly
+relevant now that the UUIDs *and* the boot disk changed:
 ```sh
 sudo nixos-generate-config --show-hardware-config   # prints to stdout, writes nothing
 ```
+Diff against `hardware-config.nix` and reconcile `boot.initrd.availableKernelModules` and the
+`fileSystems` UUIDs by hand. Don't let it overwrite the file (it targets
+`/etc/nixos/hardware-configuration.nix`, wrong for this flake, and your file has hand edits:
+Intel microcode, the `nvme_core...=0` param). Rebuild if you change anything.
 
-Diff the output against `hardware-config.nix` and merge anything relevant by hand — mainly
-`boot.initrd.availableKernelModules`; sanity-check the filesystem UUIDs match (they will).
-Don't let it overwrite the file: plain `nixos-generate-config` targets
-`/etc/nixos/hardware-configuration.nix` (wrong path for this flake), and your
-`hardware-config.nix` has hand edits (Intel microcode, the A2000 `nvme_core...=0` param).
-If you changed anything, `nixos-rebuild switch` again.
+## Deferred follow-ups (each a separate, deliberate step)
 
-If the box ever *won't* boot because the initrd can't find root (unlikely — `nvme`/`ahci`
-are generic), regenerate from the install USB instead: boot the ISO, mount root at `/mnt`,
-`sudo nixos-generate-config --root /mnt`, reconcile the modules, `nixos-rebuild boot`.
-
-## Step 6 — Validate
-
-- **RAM:** run **memtest86** (GRUB entry) overnight before trusting the reused DDR4 —
-  it's the one component most likely to cause fresh instability.
-- **Services:** `systemctl --failed`; check `pics.`/`docs.`/`actual.` URLs. Data on
-  `/hot-storage` is untouched.
-- **iGPU:** `ls /dev/dri` (expect `renderD128`); `nix-shell -p libva-utils --run vainfo`
-  should list the **iHD** driver with H264/HEVC encode+decode entrypoints.
-- **Burn-in:** black-box (`/var/lib/blackbox/metrics.log`) and netconsole→hpi keep
-  running. (Make sure hpi is on the `diagnostics/netconsole-receiver` branch so it
-  listens; the receiver interface didn't change.)
-
-## Step 7 — Deferred follow-ups (each a separate, deliberate step)
-
-- **ZFS mirror on the 2× IronWolf** — DESTRUCTIVE to those disks. Back their data up to
-  B2/external first, create the mirror, restore, export via Samba/NFS. RAID isn't backup;
-  keep the restic→B2 job.
+- **IronWolf btrfs pool (`sdb`+`sdc`, label `storage`).** It already exists — check the profile
+  first: `sudo mount /dev/sdb /mnt2 && sudo btrfs filesystem usage /mnt2`. If `Data` is
+  **RAID1**, your mirror is already built (just uncomment `/storage`, or move `/hot-storage`
+  onto it). If it's `single`/`RAID0`, rebuilding it as RAID1 is DESTRUCTIVE — back up to
+  B2/external first. RAID isn't backup; keep the restic→B2 job.
 - **Jellyfin** with QuickSync (VAAPI/QSV via `/dev/dri/renderD128`, HEVC out).
 - **immich ML on the iGPU** (OpenVINO): uncomment `intel-compute-runtime` in
   `configuration.nix`, switch immich to the openvino ML image, pass `/dev/dri`.
-- **Idle tuning** (optional): Realtek L1 ASPM in isolation (never `pcie_aspm=force`),
-  retire the ~10-year MX300, `powertop --auto-tune`. See the idle-trap section of
-  `hardware-upgrade-plan.md`.
+- **Idle tuning:** Realtek L1 ASPM in isolation (never `pcie_aspm=force`), `powertop
+  --auto-tune`. See the idle-trap section of `hardware-upgrade-plan.md`.
 
-## A2000 firmware (APST bug) — optional, data-safe
+## Appendix — re-keying (only if you did NOT preserve the host key)
 
-Old A2000 firmware has an APST power-state bug (NVMe timeouts/hangs). You already carry
-the kernel mitigation `nvme_core.default_ps_max_latency_us=0`, so this is belt-and-braces.
-A firmware flash updates the controller, **not your data** — but there's a small brick
-risk, so have backups. Do it from a live USB where the A2000 is **not** the running root
-(or on another PC):
-
-```sh
-sudo nvme list                                   # find the A2000 → /dev/nvmeX
-# download the fixed firmware image (plan notes S5Z42109 — verify current on Kingston's site)
-sudo nvme fw-download /dev/nvmeX --fw=firmware.bin
-sudo nvme fw-commit  /dev/nvmeX -s 1 -a 1        # verify slot/action against Kingston's notes
-# power-cycle
-```
-
-Windows alternative: Kingston SSD Manager. Or just skip it — the freeze was the CPU, not
-the A2000, and the kernel param already covers you.
-
-## Appendix — fresh reinstall (only if you choose it; NOT required)
-
-Reasons you might: want a clean slate, or move root to a new/bigger NVMe. Otherwise skip.
-
-**WARNING:** reformatting the A2000 wipes the OS. Your service data lives on a *different*
-disk (`/hot-storage`), so leave the data disks untouched and they survive (mounted by
-UUID). Do not include them in any partition/format step.
-
-Install options:
-- `just wipe` (nixos-anywhere) — wipes the *target* and installs the flake. Point it only
-  at the A2000; keep the data disks out of the disko/partition scope.
-- Manual: boot the NixOS ISO, partition the A2000 (GPT: ~512 MB ESP vfat + rest ext4 root),
-  `mount`, then `nixos-install --flake .#firesprout`.
-
-**Re-keying (required after a fresh install — the host SSH key changes):**
-1. Get the new host key: `ssh root@<box> 'cat /etc/ssh/ssh_host_ed25519_key.pub'`
-   (or `ssh-keyscan <ip>`).
+Skip if you copied `/etc/ssh/ssh_host_ed25519_key*` in Step 5. Otherwise the fresh install has a
+new host key and agenix secrets won't decrypt:
+1. Get the new host key: `ssh root@192.168.178.210 'cat /etc/ssh/ssh_host_ed25519_key.pub'`.
 2. In `secrets/secrets.nix`, replace the old firesprout host public key with the new one.
-3. In the devshell, rekey every agenix secret: `agenix -r` (re-encrypts all `*.age` to the
-   recipients in `secrets.nix`). Commit the re-encrypted files.
-4. git-agecrypt PII (`PII.json`, `.envrc_pii`) is encrypted to your **user** age keys, not
-   the host — unaffected, nothing to do.
+3. In the devshell, rekey: `agenix -r` (re-encrypts all `*.age`). Commit the results.
+4. git-agecrypt PII (`PII.json`) is encrypted to your **user** age keys, not the host —
+   unaffected, nothing to do.
 5. Redeploy; secrets now decrypt on the new host.
