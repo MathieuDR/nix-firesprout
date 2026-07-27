@@ -7,7 +7,7 @@
 #
 #   1. black-box recorder  - fsynced telemetry to disk every 20s (survives a total freeze)
 #   2. rasdaemon + EDAC    - persistent machine-check / DRAM error recording
-#   3. hardware watchdog   - sp5100_tco warm-resets on hang (self-recovery + pstore capture)
+#   3. hardware watchdog   - iTCO_wdt (Intel PCH TCO) warm-resets on hang (self-recovery + pstore capture)
 #   4. lockup -> panic     - turn silent soft/hard lockups into captured panics
 #   5. netconsole -> hpi   - stream the kernel log over UDP to the Pi (192.168.178.201)
 {pkgs, ...}: let
@@ -36,7 +36,7 @@ in {
   };
 
   # (3) Arm the chipset watchdog. systemd pings it every runtimeTime/2; if the
-  # kernel or systemd stops responding for 60s the SP5100 resets the machine.
+  # kernel or systemd stops responding for 60s the iTCO_wdt (Intel PCH TCO) resets the machine.
   systemd.settings.Manager.RuntimeWatchdogSec = "60s";
 
   # (5) netconsole target set up after the network is up (robust for the modular
