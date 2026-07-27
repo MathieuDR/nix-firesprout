@@ -13,5 +13,6 @@ in {
     # ./calibre-web.nix
     ./paperless.nix
     ./immich.nix
+    ./wireguard.nix
   ];
 }
