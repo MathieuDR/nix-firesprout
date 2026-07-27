@@ -72,6 +72,12 @@
     ];
   };
 
+  # Idle power: powersave P-state governor (scales up on demand, lowest idle voltage).
+  # It's the main *safe* idle lever here — deep C-states are capped on this box (CPUID
+  # 0xBF has no native intel_idle table -> ACPI C3 ceiling; NIC ASPM left off pins the
+  # package at PC3). See HARDWARE.md "Idle power".
+  powerManagement.cpuFreqGovernor = "powersave";
+
   nixpkgs.config.allowUnfree = true;
   environment = {
     enableAllTerminfo = true;
