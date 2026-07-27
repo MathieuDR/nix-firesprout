@@ -35,10 +35,8 @@
   # enp9s0, which would drop the static IP (and SSH) on first boot. Pin it to a
   # stable name by MAC so 192.168.178.210 always lands on the LAN port.
   #
-  # TODO(first boot): replace the placeholder MAC with the real one from the built
-  # machine (`ip -o link` at the console), then deploy. See MIGRATION.md.
   systemd.network.links."10-lan0" = {
-    matchConfig.MACAddress = "XX:XX:XX:XX:XX:XX"; # <-- new NIC MAC
+    matchConfig.MACAddress = "30:56:0f:a6:ad:e2";
     linkConfig.Name = "lan0";
   };
 

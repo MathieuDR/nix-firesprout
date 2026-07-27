@@ -41,33 +41,34 @@ in {
 
   # (5) netconsole target set up after the network is up (robust for the modular
   # Realtek NIC, where a boot-time netconsole= param would init before enp9s0 exists).
-  systemd.services.netconsole-target = {
-    description = "Stream kernel log to hpi via netconsole";
-    after = ["network-online.target"];
-    wants = ["network-online.target"];
-    wantedBy = ["multi-user.target"];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-    };
-    path = [pkgs.kmod pkgs.util-linux pkgs.coreutils];
-    script = ''
-      modprobe configfs 2>/dev/null || true
-      modprobe netconsole 2>/dev/null || true
-      cfg=/sys/kernel/config/netconsole
-      [ -d "$cfg" ] || mount -t configfs none /sys/kernel/config 2>/dev/null || true
-      t="$cfg/firesprout"
-      mkdir -p "$t"
-      echo 0 > "$t/enabled" 2>/dev/null || true
-      echo ${selfIface} > "$t/dev_name"
-      echo ${netconsolePort} > "$t/local_port"
-      echo ${netconsolePort} > "$t/remote_port"
-      echo ${selfIp} > "$t/local_ip"
-      echo ${piIp} > "$t/remote_ip"
-      echo ${piMac} > "$t/remote_mac"
-      echo 1 > "$t/enabled"
-    '';
-  };
+
+  # systemd.services.netconsole-target = {
+  #   description = "Stream kernel log to hpi via netconsole";
+  #   after = ["network-online.target"];
+  #   wants = ["network-online.target"];
+  #   wantedBy = ["multi-user.target"];
+  #   serviceConfig = {
+  #     Type = "oneshot";
+  #     RemainAfterExit = true;
+  #   };
+  #   path = [pkgs.kmod pkgs.util-linux pkgs.coreutils];
+  #   script = ''
+  #     modprobe configfs 2>/dev/null || true
+  #     modprobe netconsole 2>/dev/null || true
+  #     cfg=/sys/kernel/config/netconsole
+  #     [ -d "$cfg" ] || mount -t configfs none /sys/kernel/config 2>/dev/null || true
+  #     t="$cfg/firesprout"
+  #     mkdir -p "$t"
+  #     echo 0 > "$t/enabled" 2>/dev/null || true
+  #     echo ${selfIface} > "$t/dev_name"
+  #     echo ${netconsolePort} > "$t/local_port"
+  #     echo ${netconsolePort} > "$t/remote_port"
+  #     echo ${selfIp} > "$t/local_ip"
+  #     echo ${piIp} > "$t/remote_ip"
+  #     echo ${piMac} > "$t/remote_mac"
+  #     echo 1 > "$t/enabled"
+  #   '';
+  # };
 
   # (1) Black-box recorder. Appends a fsynced snapshot every 20s so we have the
   # trend right up to the freeze even when nothing else survives.
