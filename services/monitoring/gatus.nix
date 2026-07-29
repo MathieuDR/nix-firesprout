@@ -39,6 +39,8 @@ in {
 
   firesprout.homeServices.status.port = 8095;
 
+  services.restic.backups.backblaze.paths = ["/var/lib/gatus"];
+
   services.gatus = {
     enable = true;
     settings = {

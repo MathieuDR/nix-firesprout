@@ -36,4 +36,7 @@
   };
 
   firesprout.homeServices.metrics.port = 8090;
+
+  # Hub identity (SSH key), admin, registered systems, alert config + history.
+  services.restic.backups.backblaze.paths = ["/var/lib/beszel-hub"];
 }

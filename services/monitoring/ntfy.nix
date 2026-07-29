@@ -30,6 +30,9 @@ in {
 
   firesprout.homeServices.ntfy.port = port;
 
+  # Auth db (users/token/ACL) + message cache; keeps the phone logged in across a restore.
+  services.restic.backups.backblaze.paths = ["/var/lib/ntfy-sh"];
+
   # Idempotent: create the `alerts` user (random on-box password), grant rw on the
   # topic, and mint one access token → publish-token{,.env} for senders/Gatus.
   systemd.services.ntfy-provision = {

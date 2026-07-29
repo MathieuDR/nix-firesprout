@@ -38,4 +38,6 @@ in {
       Persistent = true;
     };
   };
+
+  services.restic.backups.backblaze.paths = ["/var/lib/smart-history"];
 }
