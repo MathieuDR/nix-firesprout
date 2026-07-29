@@ -167,7 +167,7 @@
   };
 
   systemd = {
-    # This actually causes freezes.
+    # systemd-oomd intentionally left disabled.
     oomd = {
       enable = false;
       enableRootSlice = true;
