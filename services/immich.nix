@@ -60,16 +60,31 @@ in {
     u = config.services.immich.user;
     g = config.services.immich.group;
   in [
-    # NVMe home for the regenerable derived data
+    # NVMe home for the regenerable derived data (always-mounted /hot-storage)
     "d ${hotDirectory} 0700 ${u} ${g} - -"
     "d ${hotDirectory}/thumbs 0700 ${u} ${g} - -"
     "d ${hotDirectory}/encoded-video 0700 ${u} ${g} - -"
-    # cold media root on the HDD pool
-    "d ${mediaDirectory} 0700 ${u} ${g} - -"
-    # point thumbs/transcodes back to the NVMe (L+ replaces any existing path)
-    "L+ ${mediaDirectory}/thumbs - - - - ${hotDirectory}/thumbs"
-    "L+ ${mediaDirectory}/encoded-video - - - - ${hotDirectory}/encoded-video"
   ];
+
+  # Symlink the regenerable derived dirs onto the NVMe. Done as a mount-ordered
+  # oneshot rather than tmpfiles L+: during `nixos-rebuild switch`, tmpfiles runs
+  # before /cold-storage remounts, so an L+ symlink lands on the underlying dir and
+  # gets shadowed by the mount. RequiresMountsFor guarantees both mounts are live.
+  systemd.services.immich-media-links = {
+    description = "Point immich thumbnails/transcodes at the NVMe";
+    before = ["immich-server.service" "immich-machine-learning.service"];
+    requiredBy = ["immich-server.service"];
+    unitConfig.RequiresMountsFor = [mediaDirectory hotDirectory];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      ln -sfn ${hotDirectory}/thumbs        ${mediaDirectory}/thumbs
+      ln -sfn ${hotDirectory}/encoded-video ${mediaDirectory}/encoded-video
+      chown -h ${config.services.immich.user}:${config.services.immich.group} ${mediaDirectory}/thumbs ${mediaDirectory}/encoded-video
+    '';
+  };
 
   services.immich = {
     enable = true;

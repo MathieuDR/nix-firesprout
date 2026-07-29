@@ -14,6 +14,11 @@ in {
     "paperless/env".file = "${self}/secrets/paperless/env.age";
   };
 
+  # Pin uid/gid so a fresh reinstall can't drift and orphan the cold-pool media
+  # (the trap immich hit: auto-allocated 993 -> 998). Current values on firesprout.
+  users.users.paperless.uid = 315;
+  users.groups.paperless.gid = 315;
+
   services.restic.backups.backblaze.paths = [
     media
     data
