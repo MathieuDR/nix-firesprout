@@ -1,6 +1,4 @@
-# Per-unit crash/OOM alerts — the only thing that catches a single container dying
-# (Beszel can't). Zero-config: the podman-* set is derived from oci-containers, like
-# the dock's container-update module, so new containers are covered automatically.
+# Per-unit crash/OOM alerts
 {
   config,
   lib,
@@ -19,6 +17,8 @@
     "paperless-consumer"
     "paperless-task-queue"
     "caddy"
+    "beszel"
+    "gatus"
     "restic-backups-backblaze"
   ];
   watched = lib.unique (containerNames ++ nativeNames);

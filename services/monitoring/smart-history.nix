@@ -1,5 +1,5 @@
 # Weekly machine-readable SMART snapshot -> /var/lib/smart-history/smart.jsonl.
-# `-x` captures attributes + error log + self-test log; smartd (Task 3) runs the
+# `-x` captures attributes + error log + self-test log; smartd runs the
 # self-tests whose results land here. This is the cheap "poor-man's Scrutiny" history.
 {pkgs, ...}: let
   devices = ["/dev/nvme0" "/dev/sda" "/dev/sdb"];

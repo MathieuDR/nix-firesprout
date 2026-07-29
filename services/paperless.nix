@@ -62,11 +62,6 @@ in {
     ];
   };
 
-  # systemd.slices.system-paperless.sliceConfig = {
-  #   MemoryMax = "4G";
-  #   MemoryHigh = "2.5G";
-  # };
-
   systemd.targets.paperless = {
     description = "Paperless document management suite";
     wants = [
@@ -120,5 +115,4 @@ in {
       # PAPERLESS_CONSUMER_BARCODE_MAX_PAGES = 1;
     };
   };
-
 }

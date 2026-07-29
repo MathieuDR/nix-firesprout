@@ -1,7 +1,3 @@
-# WireGuard tunnel to the Hetzner VPS (nix-dock, 5.75.252.210).
-# firesprout is behind Vodafone CGNAT, so it dials OUT and holds the NAT hole open with a
-# keepalive; the VPS reaches back over the tunnel. Private key lives at /etc/wireguard/wg0.key
-# (generated on this box, root 600, never in git). See foundry-tunnel-plan.md.
 {...}: {
   networking.wireguard.interfaces.wg0 = {
     ips = ["10.100.0.2/24"];

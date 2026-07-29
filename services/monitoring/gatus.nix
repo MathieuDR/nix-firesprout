@@ -1,10 +1,3 @@
-# Gatus: black-box up/down for every service. Endpoints are one attrset each,
-# grouped by host — delete a line to cull. Alerts go to ntfy via the token that
-# Task 2 wrote to /var/lib/ntfy-sh/publish-token.env (read as ${NTFY_TOKEN}).
-# Home services are checked over HTTPS (full DNS/Caddy/TLS path); a net group pings
-# 1.1.1.1/8.8.8.8 (ICMP) to catch internet loss / latency. History persists via sqlite.
-# HTTP endpoints are up/down only (no latency alert) — home ~50ms vs VPS ~150-170ms
-# means a single response-time threshold would false-alarm; latency lives on the net pings.
 {...}: let
   ntfyAlert = [
     {
@@ -20,14 +13,12 @@
     conditions = ["[CONNECTED] == true" "[STATUS] < 400"];
     alerts = ntfyAlert;
   };
-  # ICMP ping check (no HTTP status); 150ms grace (normal ping is ~20ms) so it only
-  # fires on real internet loss or congestion.
   pingEp = name: target: {
     inherit name;
     group = "net";
     url = "icmp://${target}";
     interval = "60s";
-    conditions = ["[CONNECTED] == true" "[RESPONSE_TIME] < 150"];
+    conditions = ["[CONNECTED] == true" "[RESPONSE_TIME] < 80"];
     alerts = ntfyAlert;
   };
 in {
@@ -67,7 +58,7 @@ in {
         # --- public ---
         (ep "website" "https://mathieu.deraedt.dev" "public")
         (ep "foundry" "https://drakkenheim.deraedt.dev" "public")
-        # --- VPS public (cull freely; confirm hosts from nix-dock) ---
+        # --- VPS public  ---
         (ep "glance" "https://glance.deraedt.dev" "vps")
         (ep "garden" "https://garden.deraedt.dev" "vps")
         # (ep "ghostfolio" "https://invest.deraedt.dev" "vps")
@@ -78,7 +69,7 @@ in {
         # (ep "ddb-proxy" "https://ddb-proxy.deraedt.dev" "vps")
         # --- internet connectivity (ICMP) ---
         (pingEp "cloudflare" "1.1.1.1")
-        (pingEp "google" "8.8.8.8")
+        # (pingEp "google" "8.8.8.8")
       ];
     };
   };

@@ -1,9 +1,6 @@
 # Beszel: box + container health + SMART snapshot. Hub + agent on the same box.
 # KEY + TOKEN come from the hub UI "Add System" step and live in /var/lib/beszel-agent.env
-# (root 600, written on-box, never in git).
 {...}: {
-  # Docker-compatible podman socket → the beszel-agent module auto-joins the `podman`
-  # group for container stats.
   virtualisation.podman.dockerSocket.enable = true;
 
   services.beszel.hub = {
@@ -23,7 +20,7 @@
       HUB_URL = "http://127.0.0.1:8090";
       DISABLE_SSH = "true"; # WebSocket mode
       DOCKER_HOST = "unix:///run/podman/podman.sock";
-      SERVICE_PATTERNS = "podman-*,beszel*,immich-*,paperless-*";
+      SERVICE_PATTERNS = "podman-*,beszel*,immich-*,paperless-*,gatus*";
     };
     smartmon = {
       enable = true;

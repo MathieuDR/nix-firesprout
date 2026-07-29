@@ -1,6 +1,4 @@
-# Self-hosted ntfy: the single alert sink. Auth is provisioned on-box (ntfy mints
-# the token at runtime, so it can't live in agenix). Senders read the token from
-# /var/lib/ntfy-sh/publish-token; the phone uses the token or the `alerts` login.
+# Senders read the token from /var/lib/ntfy-sh/publish-token; the phone uses the token or the `alerts` login.
 {
   config,
   pkgs,
@@ -70,5 +68,4 @@ in {
       fi
     '';
   };
-
 }

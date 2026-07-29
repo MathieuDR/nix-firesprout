@@ -1,6 +1,4 @@
-# Tier-1 monitoring stack (all on firesprout). See monitoring-design.md / monitoring-plan.md.
 {pkgs, ...}: let
-  # Shared publisher used by smartd (Task 3) and OnFailure (Task 4).
   # Usage: ntfy-send "<title>" "<body>" [priority] [tags]
   ntfy-send = pkgs.writeShellApplication {
     name = "ntfy-send";
@@ -25,10 +23,6 @@ in {
     ./onfailure.nix
     ./beszel.nix
     ./gatus.nix
-    # ./smartd.nix     # Task 3
-    # ./onfailure.nix  # Task 4
-    # ./beszel.nix     # Task 5
-    # ./gatus.nix      # Task 6
   ];
 
   environment.systemPackages = [ntfy-send];
