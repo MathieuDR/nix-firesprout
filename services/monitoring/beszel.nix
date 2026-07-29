@@ -8,10 +8,6 @@
     host = "127.0.0.1";
     port = 8090; # dataDir defaults to /var/lib/beszel-hub (NVMe/hot)
   };
-  systemd.services.beszel-hub.serviceConfig = {
-    MemoryHigh = "96M";
-    MemoryMax = "128M";
-  };
 
   services.beszel.agent = {
     enable = true;
@@ -26,10 +22,6 @@
       enable = true;
       deviceAllow = ["/dev/nvme0" "/dev/sda" "/dev/sdb"];
     };
-  };
-  systemd.services.beszel-agent.serviceConfig = {
-    MemoryHigh = "48M";
-    MemoryMax = "64M";
   };
 
   firesprout.homeServices.metrics.port = 8090;

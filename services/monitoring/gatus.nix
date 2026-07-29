@@ -24,10 +24,6 @@
 in {
   systemd.services.gatus.serviceConfig = {
     EnvironmentFile = "/var/lib/ntfy-sh/publish-token.env";
-    # Go + sqlite + concurrent TLS checks spike past a tight cap; 48M throttled it
-    # into constant memory-reclaim stalls (the "lag"). Give it real headroom.
-    MemoryHigh = "192M";
-    MemoryMax = "256M";
   };
 
   firesprout.homeServices.status.port = 8095;

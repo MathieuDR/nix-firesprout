@@ -21,11 +21,6 @@ in {
     };
   };
 
-  systemd.services.ntfy-sh.serviceConfig = {
-    MemoryHigh = "48M";
-    MemoryMax = "64M";
-  };
-
   firesprout.homeServices.ntfy.port = port;
 
   # Auth db (users/token/ACL) + message cache; keeps the phone logged in across a restore.

@@ -129,16 +129,4 @@ in {
     mediaDirectory
   ];
 
-  systemd.services.immich-machine-learning.serviceConfig = {
-    MemoryHigh = "4G";
-    MemoryMax = "6G";
-    MemorySwapMax = "0";
-  };
-
-  systemd.services.immich-server.serviceConfig = {
-    MemoryHigh = "3G";
-    MemoryMax = "5G";
-    MemorySwapMax = "0";
-  };
-
 }
