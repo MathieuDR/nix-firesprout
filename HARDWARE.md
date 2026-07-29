@@ -72,7 +72,7 @@ CPUID **06-BF-02**, running microcode **0x3e** — this **is the latest** for th
 - **Service uids can drift on a fresh install:** immich is pinned (`users.users.immich.uid = 998`) after it auto-allocated 998 (old box was 993) and orphaned its media until re-chowned. paperless is now pinned too (`uid = 315`) to avoid the same trap.
 - **Secrets:** agenix secrets are encrypted to the host SSH key (`/etc/ssh/ssh_host_ed25519_key`) — preserve it across reinstalls or re-key. git-agecrypt (`PII.json`) uses the *user* age key at `~/.ssh/git-agecrypt.key`.
 - **Kingston A2000 APST:** boot carries `nvme_core.default_ps_max_latency_us=0` for the known Linux hang; keep until firmware S5Z42109 is flashed (the in-kernel quirk also covers it).
-- **Caddy TLS (Hetzner DNS-01):** uses the `caddy-dns/hetzner` plugin with `HETZNER_DNS_API_TOKEN` (agenix env file). If certs fail with "Incorrect TXT record found", clean the stale `_acme-challenge.*` TXT records in the Hetzner DNS zone, and confirm the token is a **Hetzner DNS** token (dns.hetzner.com), not a Cloud token.
+- **Caddy TLS (Hetzner DNS-01):** `caddy-dns/hetzner` plugin + `HETZNER_DNS_API_TOKEN` (agenix), pinned to Let's Encrypt. All home services share ONE wildcard cert `*.home.deraedt.dev` (a single `_acme-challenge.home` challenge), generated from the `firesprout.homeServices` option in `caddy.nix`. This replaced per-subdomain issuance, which kept orphaning `_acme-challenge.<sub>` TXT records that needed manual cleanup.
 - **restic → B2:** service files append their paths (e.g. immich appends `mediaDirectory`). Confirm coverage with `restic snapshots`; make sure it also covers paperless + the postgres dump.
 
 ## Deferred / possible next steps

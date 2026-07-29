@@ -9,30 +9,31 @@ Profile driving these picks: single-purpose FOSS services in the existing style,
 (KeePassXC, Tuta, anonymize), Linux + Android everywhere (only Apple is a work Mac, browser only),
 TTRPG (Foundry), heavy reader, personal finance, Nix-native/declarative.
 
-## Tier 1 — monitoring & alerting (build first)
+## Tier 1 — monitoring & alerting ✅ BUILT
 
-The services run unattended and today nothing *tells* us when something breaks — a container
-crashes, a disk starts declining, or a site goes down silently. Closing that gap is the
-highest-value work.
+The services run unattended and nothing *told* us when something broke. Now implemented on
+firesprout — see `monitoring-design.md` / `monitoring-plan.md`. Built: **ntfy**, **smartd** (+ a
+weekly `smartctl --json` history log), **Gatus** (with an ICMP internet check + persistent sqlite
+history), **Beszel**, and systemd **`OnFailure`**. **Scrutiny and Netdata were dropped** (see the
+Beszel note). The decisions below are kept as the record of *why*.
 
 | Decision | Why | Notes / constraints |
 |---|---|---|
 | **ntfy** for push notifications (not Gotify) | Alerts come from many senders (smartd, systemd, Gatus, restic); ntfy lets each just POST to a topic with no per-source token. Gotify needs a token per sender. UnifiedPush = no Google FCM on Android. | The single alert sink everything else points at. |
 | **smartd** for disk health | Most mature SMART tool; it's the actual safety net, not the dashboard. | The IronWolf HDDs spin 24/7 (not parked), so scheduled SMART checks wake nothing. |
-| **Scrutiny** for SMART trend history | Consult-on-alert recorder: Backblaze failure-prediction + attribute decline history for IronWolf RMA/replace decisions. | Deliberately *not* a daily dashboard. smartd stays the alert path; Scrutiny is opened when smartd pings. Trend data only exists if it's been collecting all along, hence include it now. |
+| **Beszel** for box + container health | Lightweight hub+agent (~10-30 MB): CPU temp, RAM, load, disk, per-container stats + a SMART snapshot, with threshold alerts native to ntfy. Chosen over Scrutiny (SMART-history dashboard, overkill for 2 drives) and Netdata (heavier). smartd stays the disk alert path; a weekly `smartctl --json` log keeps raw SMART history cheaply. | Runs at `metrics.home`; agent joins the podman group for container stats. |
 | **Gatus** for service/status monitoring | Config-as-code fits the declarative flake better than Uptime Kuma. Covers the website + all public/home services. | Black-box endpoint checks only. Can double as a public status page. |
 | **systemd `OnFailure` → ntfy** for crash alerts | Containers already run as `podman-*.service` units; catching failed/OOM-killed units is pure systemd, no extra service. | Complements Gatus (Gatus catches "up but wedged"; this catches "process died"). |
 
 **Placement:** the whole stack runs on **firesprout** — ntfy (`ntfy.home`), Gatus (`status.home`),
-Scrutiny (`drives.home`), smartd, and systemd `OnFailure`. All monitoring state (Scrutiny's
-InfluxDB, Gatus's history) lives on the **NVMe (hot)** — small, DB-backed, and never on the HDDs
-Scrutiny watches. Trade-off accepted: monitoring on the box it watches can't self-report firesprout
-being *totally* down — fine now the hard-freeze is resolved. Phone push works on the home network
-today; reaching it from anywhere waits on the Headscale work below.
+Beszel (`metrics.home`), smartd, and systemd `OnFailure`. All monitoring state (Beszel + Gatus
+sqlite, ntfy cache) lives on the **NVMe (hot)**. Trade-off accepted: monitoring on the box it
+watches can't self-report firesprout being *totally* down — fine now the hard-freeze is resolved.
+Phone push works on the home network today; reaching it from anywhere waits on the Headscale work
+below. Caddy fronts every `*.home` service through one wildcard cert (see `firesprout.homeServices`
+in `caddy.nix`).
 
-Optional in this tier: **cAdvisor** for per-container resource metrics (useful to tune the
-existing `MemoryMax` caps on immich/Foundry) — only if graphs are wanted; it's the metrics tier,
-not the alert tier.
+(cAdvisor was considered for per-container metrics, but Beszel already covers per-container CPU/RAM.)
 
 ## Remote access — Headscale (planned, after Tier 1)
 
