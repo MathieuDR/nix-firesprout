@@ -47,11 +47,14 @@
     fsType = "ext4";
   };
 
-  # fileSystems."/storage" = {
-  #   device = "/dev/disk/by-uuid/b88f560b-9fd0-45b1-a49f-5e0979cb091c";
-  #   fsType = "btrfs";
-  #   options = ["compress=zstd" "noatime"];
-  # };
+  # Bulk cold storage: the two 4TB IronWolf HDDs as a single btrfs pool (8TB, no
+  # redundancy; Backblaze restic is the offsite copy). noatime avoids waking the
+  # spindles on reads. Formatted with: mkfs.btrfs -L cold -d single -m raid1 sda sdb
+  fileSystems."/cold-storage" = {
+    device = "/dev/disk/by-label/cold";
+    fsType = "btrfs";
+    options = ["compress=zstd:1" "noatime"];
+  };
 
   swapDevices = [];
 

@@ -1,7 +1,7 @@
 {...}: let
   #NOTE: We don't need to set these directories up ourselves.
-  web_data_dir = "/hot-storage/calibre-web";
-  library = "/hot-storage/calibre-library-cold";
+  web_data_dir = "/hot-storage/calibre-web"; # app data: hot, stays on NVMe
+  library = "/cold-storage/calibre-library"; # books: bulk, on the HDD pool
 in {
   services.calibre-web = {
     enable = false;

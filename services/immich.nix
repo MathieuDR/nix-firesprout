@@ -5,7 +5,11 @@
   config,
   ...
 }: let
-  mediaDirectory = "/hot-storage/immich-cold";
+  # Originals live on the cold HDD pool; the regenerable derived data (thumbnails,
+  # transcodes) is symlinked back to the NVMe so browsing/playback never wakes the
+  # spindles. immich follows the symlinks transparently.
+  mediaDirectory = "/cold-storage/immich";
+  hotDirectory = "/hot-storage/immich-hot";
 in {
   # Overlay to enable CUDA for onnxruntime
   # See: https://discourse.nixos.org/t/immich-and-cuda-accelerated-machine-learning/58330/4
@@ -52,8 +56,19 @@ in {
   #   })
   # ];
 
-  systemd.tmpfiles.rules = [
-    "d ${mediaDirectory} 0700 ${config.services.immich.user} ${config.services.immich.group}"
+  systemd.tmpfiles.rules = let
+    u = config.services.immich.user;
+    g = config.services.immich.group;
+  in [
+    # NVMe home for the regenerable derived data
+    "d ${hotDirectory} 0700 ${u} ${g} - -"
+    "d ${hotDirectory}/thumbs 0700 ${u} ${g} - -"
+    "d ${hotDirectory}/encoded-video 0700 ${u} ${g} - -"
+    # cold media root on the HDD pool
+    "d ${mediaDirectory} 0700 ${u} ${g} - -"
+    # point thumbs/transcodes back to the NVMe (L+ replaces any existing path)
+    "L+ ${mediaDirectory}/thumbs - - - - ${hotDirectory}/thumbs"
+    "L+ ${mediaDirectory}/encoded-video - - - - ${hotDirectory}/encoded-video"
   ];
 
   services.immich = {

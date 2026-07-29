@@ -3,8 +3,8 @@
   config,
   ...
 }: let
-  data = "/hot-storage/paperless/data";
-  media = "/hot-storage/paperless-cold/media";
+  data = "/hot-storage/paperless/data"; # index/models: hot, stays on NVMe
+  media = "/cold-storage/paperless/media"; # documents: bulk, on the HDD pool
   port = "29818";
   tikaPort = "29820";
   gotenbergPort = "29819";
