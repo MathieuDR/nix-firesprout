@@ -24,7 +24,7 @@ in {
     ./smartd.nix
     ./onfailure.nix
     ./beszel.nix
-    # ./gatus.nix      # Task 6
+    ./gatus.nix
     # ./smartd.nix     # Task 3
     # ./onfailure.nix  # Task 4
     # ./beszel.nix     # Task 5
