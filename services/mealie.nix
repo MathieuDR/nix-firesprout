@@ -58,4 +58,6 @@ in {
     data
   ];
 
+  firesprout.homeServices.recipes.port = builtins.fromJSON port;
+
 }

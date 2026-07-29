@@ -24,6 +24,8 @@ in {
     MemoryMax = "64M";
   };
 
+  firesprout.homeServices.ntfy.port = port;
+
   # Idempotent: create the `alerts` user (random on-box password), grant rw on the
   # topic, and mint one access token → publish-token{,.env} for senders/Gatus.
   systemd.services.ntfy-provision = {

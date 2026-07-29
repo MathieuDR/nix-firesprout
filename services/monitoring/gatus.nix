@@ -25,6 +25,8 @@ in {
     MemoryMax = "64M";
   };
 
+  firesprout.homeServices.status.port = 8095;
+
   services.gatus = {
     enable = true;
     settings = {

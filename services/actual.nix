@@ -22,4 +22,6 @@ in {
     data_dir
   ];
 
+  firesprout.homeServices.actual.port = 5006;
+
 }

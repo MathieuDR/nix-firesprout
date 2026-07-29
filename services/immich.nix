@@ -117,6 +117,11 @@ in {
   users.users.immich.uid = 998;
   users.groups.immich.gid = 998;
 
+  firesprout.homeServices.pics = {
+    host = "localhost"; # immich binds [::1]
+    port = config.services.immich.port;
+  };
+
   #TODO: Make better backups
   # https://wiki.nixos.org/wiki/Immich
   # https://docs.immich.app/administration/backup-and-restore

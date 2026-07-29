@@ -14,6 +14,24 @@ in {
     "paperless/env".file = "${self}/secrets/paperless/env.age";
   };
 
+  firesprout.homeServices.docs.extraConfig = ''
+    header {
+      Strict-Transport-Security "max-age=31536000; includeSubDomains"
+      X-Content-Type-Options "nosniff"
+      X-Frame-Options "SAMEORIGIN"
+      Referrer-Policy "strict-origin-when-cross-origin"
+    }
+    route {
+      reverse_proxy /api/documents/post_document* http://127.0.0.1:${port} {
+        transport http {
+          read_timeout 300s
+          write_timeout 300s
+        }
+      }
+      reverse_proxy http://127.0.0.1:${port}
+    }
+  '';
+
   # Pin uid/gid so a fresh reinstall can't drift and orphan the cold-pool media
   # (the trap immich hit: auto-allocated 993 -> 998). Current values on firesprout.
   users.users.paperless.uid = 315;
