@@ -43,22 +43,21 @@ in {
         (ep "paperless" "https://docs.home.deraedt.dev" "home")
         (ep "actual" "https://actual.home.deraedt.dev" "home")
         (ep "mealie" "https://recipes.home.deraedt.dev/api/app/about" "home")
-        (ep "ntfy" "http://127.0.0.1:2586/v1/health" "home")
-        (ep "beszel" "http://127.0.0.1:8090" "home")
+        (ep "ntfy" "https://ntfy.home.deraedt.dev/v1/health" "home")
+        (ep "beszel" "https://metrics.home.deraedt.dev" "home")
         # --- public ---
         (ep "website" "https://mathieu.deraedt.dev" "public")
         (ep "foundry" "https://drakkenheim.deraedt.dev" "public")
         # --- VPS public (cull freely; confirm hosts from nix-dock) ---
         (ep "glance" "https://glance.deraedt.dev" "vps")
         (ep "garden" "https://garden.deraedt.dev" "vps")
-        (ep "ghostfolio" "https://invest.deraedt.dev" "vps")
+        # (ep "ghostfolio" "https://invest.deraedt.dev" "vps")
         (ep "commafeed" "https://feed.deraedt.dev" "vps")
         (ep "readdeck" "https://readlater.deraedt.dev" "vps")
         (ep "shlink" "https://l.deraedt.dev" "vps")
         (ep "goatcounter" "https://insights.deraedt.dev" "vps")
-        (ep "ddb-proxy" "https://ddb-proxy.deraedt.dev" "vps")
+        # (ep "ddb-proxy" "https://ddb-proxy.deraedt.dev" "vps")
       ];
     };
   };
-
 }

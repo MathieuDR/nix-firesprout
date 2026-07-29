@@ -16,6 +16,10 @@ in {
       behind-proxy = true;
       auth-file = "/var/lib/ntfy-sh/user.db";
       auth-default-access = "deny-all";
+      # Persist the message cache (survives restarts) and keep a week of history,
+      # so alerts fired while nothing was subscribed still catch up.
+      cache-file = "/var/lib/ntfy-sh/cache.db";
+      cache-duration = "168h";
     };
   };
 
