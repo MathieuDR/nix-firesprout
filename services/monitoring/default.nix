@@ -21,7 +21,8 @@ in {
   imports = [
     ./smart-history.nix
     ./ntfy.nix
-    # ./smartd.nix     # Task 3
+    ./smartd.nix
+    # ./onfailure.nix  # Task 4
     # ./smartd.nix     # Task 3
     # ./onfailure.nix  # Task 4
     # ./beszel.nix     # Task 5
@@ -29,6 +30,8 @@ in {
   ];
 
   environment.systemPackages = [ntfy-send];
+  # Expose to sibling modules (smartd, onfailure) so they can call it by store path.
+  _module.args.ntfySend = ntfy-send;
 
   # SMART history log lives on the NVMe (root fs), never on the HDD pool.
   systemd.tmpfiles.rules = ["d /var/lib/smart-history 0750 root root -"];
