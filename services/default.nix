@@ -19,5 +19,6 @@ in {
     ./immich.nix
     ./wireguard.nix
     ./mealie.nix
+    ./monitoring
   ];
 }
