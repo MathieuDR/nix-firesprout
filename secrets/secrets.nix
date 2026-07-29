@@ -10,4 +10,5 @@ in {
   "hetzner/api-key.age".publicKeys = all_recipients;
   "paperless/env.age".publicKeys = all_recipients;
   "immich/env.age".publicKeys = all_recipients;
+  "recipes/env.age".publicKeys = all_recipients;
 }

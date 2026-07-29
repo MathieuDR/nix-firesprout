@@ -2,11 +2,15 @@
   pkgs,
   lib,
   PII,
+  self,
   ...
 }: let
 in {
+  age.secrets = {
+    "common/ghp".file = "${self}/secrets/common/ghp.age";
+  };
+
   imports = [
-    ./diagnostics.nix
     ./restic.nix
     ./caddy.nix
     ./actual.nix
@@ -14,5 +18,6 @@ in {
     ./paperless.nix
     ./immich.nix
     ./wireguard.nix
+    ./mealie.nix
   ];
 }
