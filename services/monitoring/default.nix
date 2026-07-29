@@ -23,7 +23,8 @@ in {
     ./ntfy.nix
     ./smartd.nix
     ./onfailure.nix
-    # ./beszel.nix     # Task 5
+    ./beszel.nix
+    # ./gatus.nix      # Task 6
     # ./smartd.nix     # Task 3
     # ./onfailure.nix  # Task 4
     # ./beszel.nix     # Task 5
