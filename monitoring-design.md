@@ -118,6 +118,10 @@ the disks it watches.
 - Measure after deploy: Beszel's own per-service/per-container stats + `systemctl show -p MemoryCurrent`.
   Report actuals back (Beszel is the meter for its own stack).
 
+**Measured footprint (2026-07-29):** ntfy 13M · beszel-hub 9.1M · gatus 9.5M · smartd 1.7M ≈ **~33 MB**
+total RAM (beszel-agent ~10M once enabled; smart-history is a weekly oneshot). Well under the caps;
+no adjustment needed.
+
 ## Error handling / edge cases
 - ntfy on the same box as everything → if firesprout is fully down, nothing can alert (accepted;
   freeze resolved). Optional later: Beszel **heartbeat** → an external uptime service as a dead-man's
