@@ -22,7 +22,8 @@ in {
     ./smart-history.nix
     ./ntfy.nix
     ./smartd.nix
-    # ./onfailure.nix  # Task 4
+    ./onfailure.nix
+    # ./beszel.nix     # Task 5
     # ./smartd.nix     # Task 3
     # ./onfailure.nix  # Task 4
     # ./beszel.nix     # Task 5
