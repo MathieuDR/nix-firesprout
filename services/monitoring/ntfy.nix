@@ -62,12 +62,4 @@ in {
     '';
   };
 
-  services.caddy.virtualHosts."ntfy.home.deraedt.dev".extraConfig = ''
-    reverse_proxy http://127.0.0.1:${toString port}
-    encode {
-      zstd
-      gzip
-      minimum_length 1024
-    }
-  '';
 }

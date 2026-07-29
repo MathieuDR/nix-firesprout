@@ -20,5 +20,6 @@ in {
     ./wireguard.nix
     ./mealie.nix
     ./monitoring
+    ./home-proxy.nix
   ];
 }

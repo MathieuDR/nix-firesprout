@@ -21,6 +21,7 @@ in {
     email = PII.caddyEmail;
     environmentFile = config.age.secrets.hetzner-api-key.path;
     globalConfig = ''
+      acme_ca https://acme-v02.api.letsencrypt.org/directory
       acme_dns hetzner {env.HETZNER_DNS_API_TOKEN}
     '';
   };

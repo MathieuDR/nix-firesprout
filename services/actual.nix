@@ -22,16 +22,4 @@ in {
     data_dir
   ];
 
-  services.caddy.virtualHosts."actual.home.deraedt.dev" = {
-    # tls internal
-    extraConfig = ''
-      encode {
-        zstd
-        gzip
-        minimum_length 1024
-      }
-
-      reverse_proxy http://localhost:5006
-    '';
-  };
 }

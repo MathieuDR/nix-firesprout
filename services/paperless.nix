@@ -103,33 +103,4 @@ in {
     };
   };
 
-  services.caddy.virtualHosts.${domain} = {
-    extraConfig = ''
-      reverse_proxy http://localhost:${port}
-      encode {
-        zstd
-        gzip
-        minimum_length 1024
-      }
-
-      # Security headers
-      header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains"
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "SAMEORIGIN"
-        Referrer-Policy "strict-origin-when-cross-origin"
-      }
-
-      # Increase timeout for large file uploads
-      @uploads {
-        path /api/documents/post_document*
-      }
-      reverse_proxy @uploads http://localhost:${port} {
-        transport http {
-          read_timeout 300s
-          write_timeout 300s
-        }
-      }
-    '';
-  };
 }

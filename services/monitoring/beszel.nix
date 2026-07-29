@@ -33,12 +33,4 @@
   #   MemoryMax = "64M";
   # };
 
-  services.caddy.virtualHosts."metrics.home.deraedt.dev".extraConfig = ''
-    reverse_proxy http://127.0.0.1:8090
-    encode {
-      zstd
-      gzip
-      minimum_length 1024
-    }
-  '';
 }

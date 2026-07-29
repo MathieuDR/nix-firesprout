@@ -59,12 +59,4 @@ in {
     };
   };
 
-  services.caddy.virtualHosts."status.home.deraedt.dev".extraConfig = ''
-    reverse_proxy http://127.0.0.1:8095
-    encode {
-      zstd
-      gzip
-      minimum_length 1024
-    }
-  '';
 }

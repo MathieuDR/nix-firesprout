@@ -58,14 +58,4 @@ in {
     data
   ];
 
-  services.caddy.virtualHosts."recipes.home.deraedt.dev" = {
-    extraConfig = ''
-      reverse_proxy http://localhost:${port}
-      encode {
-        zstd
-        gzip
-        minimum_length 1024
-      }
-    '';
-  };
 }

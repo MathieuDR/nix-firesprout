@@ -136,14 +136,4 @@ in {
     MemorySwapMax = "0";
   };
 
-  services.caddy.virtualHosts."pics.home.deraedt.dev" = {
-    extraConfig = ''
-      reverse_proxy http://localhost:${toString config.services.immich.port}
-      encode {
-        zstd
-        gzip
-        minimum_length 1024
-      }
-    '';
-  };
 }
