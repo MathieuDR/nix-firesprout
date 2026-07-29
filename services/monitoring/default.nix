@@ -20,7 +20,8 @@
 in {
   imports = [
     ./smart-history.nix
-    # ./ntfy.nix       # Task 2
+    ./ntfy.nix
+    # ./smartd.nix     # Task 3
     # ./smartd.nix     # Task 3
     # ./onfailure.nix  # Task 4
     # ./beszel.nix     # Task 5
