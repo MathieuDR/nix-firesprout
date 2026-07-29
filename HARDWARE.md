@@ -12,7 +12,7 @@ evergreen reference (the old AMD box and the migration steps are history, not do
 | Board | **Gigabyte B760M DS3H DDR4** (rev 1.0) | µATX with **4 DIMM slots** (needed to use all 4x8 GB), DDR4 (reuse RAM), 4x SATA, 2.5GbE. |
 | RAM | **4x 8 GB DDR4-3200 CL16** (reused) | Runs at **2933** (4 DIMMs = 2 per channel → 2933 is the stable ceiling, not 3200; confirmed by memtest). |
 | Boot / hot | **Kingston A2000 1 TB NVMe** | OS root + `/hot-storage`. See the APST note below. |
-| Data | **2x Seagate IronWolf 4 TB** (SATA) | Currently single ext4 (`/hot-storage` split); btrfs pool exists on both disks, unmounted (deferred mirror). |
+| Data | **2x Seagate IronWolf 4 TB** (SATA) | **btrfs single pool `cold` (8 TB, no redundancy)** at `/cold-storage`; holds immich originals + paperless documents. Leans on Backblaze restic (RAID1 was considered and declined for capacity). |
 | Scratch | Crucial MX300 1 TB SATA (~2016) | Old; scratch only, not for anything irreplaceable. |
 | Case | **Cooler Master Silencio S400** | Quiet, sound-dampened µATX. |
 | PSU | **FSP Dagger Pro 650W SFX** (Gold) | The S400's HDD cage only clears ~140 mm; the reused 160 mm Corsair RM650x didn't fit, so a short SFX unit (with fresh cables) went in. |
@@ -65,10 +65,11 @@ CPUID **06-BF-02**, running microcode **0x3e** — this **is the latest** for th
 
 - **NIC name pinned:** the Realtek enumerates differently than the old `enp9s0`, so it's pinned to **`lan0` by MAC** (`configuration.nix`), with the static `192.168.178.210` bound to `lan0`. First boot on any new NIC needs the MAC filled in at the console.
 - **Watchdog:** `iTCO_wdt` (Intel PCH TCO) + `systemd` `RuntimeWatchdogSec` — a hard hang self-reboots. Verified armed (no "reboot disabled by hardware"). It does **not** catch a NIC-only link-flap.
-- **Service data lives in two places** — remember this for backups/moves:
-  - `/hot-storage/*` — immich media (`immich-cold`), paperless (SQLite `db.sqlite3` + media), actual, calibre.
-  - **`/var/lib/postgresql`** — the **immich Postgres DB** (albums, faces, ML embeddings). NOT under `/hot-storage`. immich also auto-dumps to `/hot-storage/immich-cold/backups/`.
-- **Service uids can drift on a fresh install:** immich is now pinned (`users.users.immich.uid = 998`) after it auto-allocated 998 (old box was 993) and orphaned its media until re-chowned. paperless (315) is already static.
+- **Service data lives in three places** — remember this for backups/moves:
+  - `/cold-storage/*` (btrfs HDD pool) — bulk: immich originals (`/cold-storage/immich`, incl. the nightly DB dump under `backups/`) and paperless documents (`/cold-storage/paperless/media`).
+  - `/hot-storage/*` (NVMe) — hot/small: immich's regenerable thumbnails + transcodes (`immich-hot`, symlinked into the cold media dir by the `immich-media-links` unit), paperless index + `db.sqlite3` (`paperless/data`), actual, mealie, calibre app data.
+  - **`/var/lib/postgresql`** — the **immich Postgres DB** (albums, faces, ML embeddings). NOT under either storage mount.
+- **Service uids can drift on a fresh install:** immich is pinned (`users.users.immich.uid = 998`) after it auto-allocated 998 (old box was 993) and orphaned its media until re-chowned. paperless is now pinned too (`uid = 315`) to avoid the same trap.
 - **Secrets:** agenix secrets are encrypted to the host SSH key (`/etc/ssh/ssh_host_ed25519_key`) — preserve it across reinstalls or re-key. git-agecrypt (`PII.json`) uses the *user* age key at `~/.ssh/git-agecrypt.key`.
 - **Kingston A2000 APST:** boot carries `nvme_core.default_ps_max_latency_us=0` for the known Linux hang; keep until firmware S5Z42109 is flashed (the in-kernel quirk also covers it).
 - **Caddy TLS (Hetzner DNS-01):** uses the `caddy-dns/hetzner` plugin with `HETZNER_DNS_API_TOKEN` (agenix env file). If certs fail with "Incorrect TXT record found", clean the stale `_acme-challenge.*` TXT records in the Hetzner DNS zone, and confirm the token is a **Hetzner DNS** token (dns.hetzner.com), not a Cloud token.
