@@ -2,25 +2,12 @@
   pkgs,
   self,
   config,
+  lib,
   ...
 }: {
   age.secrets = {
     "codeberg/runner".file = "${self}/secrets/codeberg/runner.age";
   };
-
-  # docker:// job labels need a Docker-API socket. firesprout runs podman, so expose
-  # its socket at the usual Docker location and point the runner at it.
-  virtualisation.podman.dockerSocket.enable = true;
-
-  # The native executor builds/pushes the garden image by talking to the rootful
-  # podman API socket (via DOCKER_HOST). Grant the runner user group access to it.
-  # Builds therefore run as root on the host, same trust level as docker-socket access.
-  users.groups.podman = {};
-  systemd.sockets.podman.socketConfig = {
-    SocketMode = "0660";
-    SocketGroup = "podman";
-  };
-  users.users.gitea-runner.extraGroups = ["podman"];
 
   services.gitea-actions-runner = {
     package = pkgs.forgejo-runner;
@@ -31,17 +18,21 @@
 
       tokenFile = config.age.secrets."codeberg/runner".path;
 
-      labels = [
-        "ubuntu-latest:docker://node:22-bookworm"
-        "ubuntu-24.04:docker://node:22-bookworm"
-        "native:host"
-      ];
+      # Native (host) executor only. Without a docker:// executor the runner has
+      # no reason to touch the rootful podman socket — see the lock-down below.
+      labels = ["native:host"];
     };
   };
 
+  # Lock the runner down. Jobs run on the host as the unprivileged DynamicUser;
+  # the only privileged thing they reach is the nix daemon (a sandboxed build
+  # boundary, not a root shell). The module would otherwise add the `podman`
+  # group (podman is enabled host-wide for other services), which lets a native
+  # job reach the root podman socket and escalate, so strip it. The build needs
+  # nix (build image), skopeo (push), openssh (deploy); node and git come from
+  # the module.
   systemd.services.gitea-runner-default = {
-    environment.DOCKER_HOST = "unix:///run/podman/podman.sock";
-    # native executor needs a container client + ssh on PATH to build, push and deploy.
-    path = [pkgs.docker-client pkgs.openssh];
+    serviceConfig.SupplementaryGroups = lib.mkForce [];
+    path = [pkgs.nix pkgs.skopeo pkgs.openssh];
   };
 }
