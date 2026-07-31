@@ -32,7 +32,15 @@
   # nix (build image), skopeo (push), openssh (deploy); node and git come from
   # the module.
   systemd.services.gitea-runner-default = {
-    serviceConfig.SupplementaryGroups = lib.mkForce [];
+    serviceConfig = {
+      SupplementaryGroups = lib.mkForce [];
+      # systemd mounts the DynamicUser StateDirectory noexec; the job workspace
+      # lives under it and CI must execute tool binaries it installs there
+      # (esbuild and other native npm deps), so carve the runner's work tree
+      # back to executable. Still unprivileged: this only re-enables exec inside
+      # its own scratch dir, not root or podman access.
+      ExecPaths = ["/var/lib/gitea-runner"];
+    };
     path = [pkgs.nix pkgs.skopeo pkgs.openssh];
   };
 }
