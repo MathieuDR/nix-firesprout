@@ -50,6 +50,7 @@ in {
         (ep "immich" "https://pics.home.deraedt.dev/api/server/ping" "home")
         (ep "paperless" "https://docs.home.deraedt.dev" "home")
         (ep "actual" "https://actual.home.deraedt.dev" "home")
+        (ep "vaultwarden" "https://vault.home.deraedt.dev/alive" "home")
         (ep "mealie" "https://recipes.home.deraedt.dev/api/app/about" "home")
         (ep "ntfy" "https://ntfy.home.deraedt.dev/v1/health" "home")
         (ep "beszel" "https://metrics.home.deraedt.dev" "home")

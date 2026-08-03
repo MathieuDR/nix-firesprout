@@ -27,7 +27,7 @@
       HUB_URL = "http://10.100.0.2:8090";
       DISABLE_SSH = "true"; # WebSocket mode
       DOCKER_HOST = "unix:///run/podman/podman.sock";
-      SERVICE_PATTERNS = "podman-*,caddy*,beszel*,immich-*,paperless-*,gatus*,wireguard*,gitea-runner-*";
+      SERVICE_PATTERNS = "podman-*,caddy*,beszel*,immich-*,paperless-*,gatus*,wireguard*,gitea-runner-*,vaultwarden*";
     };
     smartmon = {
       enable = true;
