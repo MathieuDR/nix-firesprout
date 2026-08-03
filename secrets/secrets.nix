@@ -12,4 +12,5 @@ in {
   "immich/env.age".publicKeys = all_recipients;
   "recipes/env.age".publicKeys = all_recipients;
   "codeberg/runner.age".publicKeys = all_recipients;
+  "vaultwarden/env.age".publicKeys = all_recipients;
 }
