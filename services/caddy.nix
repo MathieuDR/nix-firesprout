@@ -8,7 +8,7 @@
 }: let
   caddyWithHetzner = pkgs.caddy.withPlugins {
     plugins = ["github.com/caddy-dns/hetzner/v2@v2.0.0"];
-    hash = "sha256-7k2K9qhbjZMR29Y+U2pnRcBBuvK5Q9vVGQH72g42+/k=";
+    hash = "sha256-rCsSOiSTQiEJTG6+27OPnGpaSu4vUrv0CDU1lOO2suM=";
   };
 
   homeBase = "home.deraedt.dev";
